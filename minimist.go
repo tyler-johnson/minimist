@@ -3,6 +3,7 @@ package minimist
 import (
 	"os"
 	"regexp"
+	"strings"
 	//"strings"
 )
 
@@ -53,22 +54,58 @@ var dashesRe = regexp.MustCompile(`^(-|--)`)
 
 var trueFalseRe = regexp.MustCompile(`^(true|false)`)
 
+type Config struct {
+	Alias    map[string]string
+	Defaults map[string]interface{}
+}
+
 // Parse parses os.Args excluding os.Args[0].
-func Parse() ArgMap {
-	return ParseArgv(os.Args[1:])
+func Parse(conf *Config) ArgMap {
+	return ParseArgv(os.Args[1:], conf)
 }
 
 // ParseArgv parses an argv for options.
-func ParseArgv(argv []string) ArgMap {
+func ParseArgv(argv []string, conf *Config) ArgMap {
 	rest := []string{}
-
+	var alias map[string]string
 	result := map[string]interface{}{
 		"_":  rest,
 		"--": []string{},
 	}
 
-	setArg := func(key string, val interface{}) {
-		result[key] = val
+	if conf != nil {
+		if conf.Alias != nil {
+			alias = conf.Alias
+		}
+
+		for k, v := range conf.Defaults {
+			result[k] = v
+		}
+	}
+
+	var setArg func(key string, val interface{})
+	setArg = func(key string, val interface{}) {
+		keys := strings.Split(key, ".")
+		head := keys[:len(keys)-1]
+		last := keys[len(keys)-1]
+		res := result
+
+		for _, k := range head {
+			existing := res[k]
+			if ex, ok := existing.(map[string]interface{}); ok {
+				res = ex
+			} else {
+				child := make(map[string]interface{})
+				res[k] = child
+				res = child
+			}
+		}
+
+		res[last] = val
+
+		if a, ok := alias[key]; ok {
+			setArg(a, val)
+		}
 	}
 
 	l := len(argv)

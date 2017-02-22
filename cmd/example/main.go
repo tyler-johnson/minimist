@@ -4,36 +4,33 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mgutz/minimist"
+	"github.com/tyler-johnson/minimist"
 )
 
 var usage = `
 example - an example os minimist
 
 Usage:
-  -h, --help     This screen
-      --verbose  Log verbosely
-  -v, --version  Print version
-  -w, --watch    Watch tasks
+  -h, -?, --help     This screen
+  -v, --version      Print version
 `
 
 func main() {
-	argm := minimist.Parse()
+	argm := minimist.Parse(&minimist.Config{
+		Alias: map[string]string{
+			"h": "help", "?": "help",
+			"v": "version",
+		},
+	})
 	fmt.Printf("%q\n", os.Args)
 
 	// cmd --help || cmd --h || cmd -?
-	if argm.MayBool(false, "help", "h", "?") {
+	if v, ok := argm.Get("help").(bool); ok && v {
 		fmt.Println(usage)
 	}
 
 	// cmd -v || cmd --version
-	if argm.AsBool("v", "version") {
+	if v, ok := argm.Get("version").(bool); ok && v {
 		fmt.Println("1.0")
 	}
-
-	// cmd foo -- ...
-	// argm.SubCommand("foo", func(a *ArgMap) {
-	// })
-
-	// argm.SubExec("talk", "echo")
 }
