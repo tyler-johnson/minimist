@@ -60,12 +60,12 @@ type Config struct {
 }
 
 // Parse parses os.Args excluding os.Args[0].
-func Parse(conf *Config) ArgMap {
+func Parse(conf *Config) Argv {
 	return ParseArgv(os.Args[1:], conf)
 }
 
 // ParseArgv parses an argv for options.
-func ParseArgv(argv []string, conf *Config) ArgMap {
+func ParseArgv(argv []string, conf *Config) Argv {
 	rest := []string{}
 	var alias map[string]string
 	result := map[string]interface{}{
